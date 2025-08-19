@@ -207,8 +207,7 @@ router.post('/signup', signupLimiter, speedLimiter, async (req, res) => {
     }
 
     // Hash password with enhanced security
-    const saltRounds = process.env.NODE_ENV === 'production' ? 14 : 12;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
+  // Password hashing handled by User schema pre-save hook; use raw password here
 
     // Generate unique identifiers
     const userReferralCode = crypto.randomBytes(8).toString('hex').toUpperCase();
@@ -218,7 +217,7 @@ router.post('/signup', signupLimiter, speedLimiter, async (req, res) => {
     const newUser = new User({
       name: name.trim(),
       email: email.toLowerCase().trim(),
-      password: hashedPassword,
+  password: password,
       businessName: businessName?.trim() || name.trim(),
       businessType: businessType || 'other',
       businessDescription: businessDescription?.trim(),

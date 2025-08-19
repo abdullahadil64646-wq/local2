@@ -1,10 +1,13 @@
 const twilio = require('twilio');
 
-// Initialize Twilio client
-const twilioClient = twilio(
-  process.env.TWILIO_ACCOUNT_SID,
-  process.env.TWILIO_AUTH_TOKEN
-);
+let twilioClient = null;
+function getTwilioClient() {
+  if (twilioClient) return twilioClient;
+  if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
+    twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+  }
+  return twilioClient;
+}
 
 // Send SMS
 const sendSMS = async (phone, message) => {
@@ -18,7 +21,11 @@ const sendSMS = async (phone, message) => {
         : '+92' + phone;
     }
     
-    const result = await twilioClient.messages.create({
+    const client = getTwilioClient();
+    if (!client) {
+      return { success: false, error: 'SMS service not configured' };
+    }
+    const result = await client.messages.create({
       body: message,
       from: process.env.TWILIO_PHONE_NUMBER,
       to: formattedPhone
