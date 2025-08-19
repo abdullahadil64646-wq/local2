@@ -28,42 +28,105 @@ const seedDatabase = async () => {
 
     // Create sample offers
     console.log('💰 Creating sample offers...');
+    
+    // First create an admin user for offers
+    let adminUser = await User.findOne({ role: 'admin' });
+    if (!adminUser) {
+      const bcrypt = require('bcryptjs');
+      const salt = await bcrypt.genSalt(12);
+      const hashedPassword = await bcrypt.hash('admin123', salt);
+      
+      adminUser = await User.create({
+        name: 'Abdullah Adil',
+        email: 'admin@saaslocal.pk',
+        password: hashedPassword,
+        phone: '+923211234567',
+        role: 'admin',
+        businessName: 'SaaS Local Platform',
+        businessType: 'services',
+        address: {
+          city: 'Karachi',
+          province: 'Sindh',
+          country: 'pakistan'
+        },
+        isActive: true,
+        isEmailVerified: true,
+        acceptedTermsAt: new Date(),
+        acceptedPrivacyAt: new Date()
+      });
+      console.log('✅ Created admin user for offers');
+    }
+    
     const offers = [
       {
         name: 'Welcome Discount',
         code: 'WELCOME20',
         description: 'Get 20% off your first month subscription',
-        discountType: 'percentage',
-        discountPercentage: 20,
-        validFrom: new Date(),
-        validUntil: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), // 90 days
+        discount: {
+          type: 'percentage',
+          value: 20,
+          currency: 'PKR'
+        },
+        validity: {
+          startDate: new Date(),
+          endDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000) // 90 days
+        },
+        usage: {
+          totalLimit: 1000,
+          perUserLimit: 1,
+          currentUsage: 0
+        },
         isActive: true,
-        maxUses: 1000,
-        currentUses: 0
+        createdBy: adminUser._id
       },
       {
         name: 'Premium Upgrade',
-        code: 'PREMIUM50',
+        code: 'PREMIUM500',
         description: 'PKR 500 off Premium plan',
-        discountType: 'amount',
-        discountAmount: 500,
-        validFrom: new Date(),
-        validUntil: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), // 60 days
+        discount: {
+          type: 'fixed',
+          value: 500,
+          currency: 'PKR'
+        },
+        validity: {
+          startDate: new Date(),
+          endDate: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000) // 60 days
+        },
+        usage: {
+          totalLimit: 100,
+          perUserLimit: 1,
+          currentUsage: 0
+        },
+        targeting: {
+          applicablePlans: ['premium']
+        },
         isActive: true,
-        maxUses: 100,
-        currentUses: 0
+        createdBy: adminUser._id
       },
       {
         name: 'Student Discount',
         code: 'STUDENT30',
         description: '30% off for students',
-        discountType: 'percentage',
-        discountPercentage: 30,
-        validFrom: new Date(),
-        validUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year
+        discount: {
+          type: 'percentage',
+          value: 30,
+          maxDiscount: 1000,
+          currency: 'PKR'
+        },
+        validity: {
+          startDate: new Date(),
+          endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) // 1 year
+        },
+        usage: {
+          totalLimit: 500,
+          perUserLimit: 1,
+          currentUsage: 0
+        },
+        targeting: {
+          userType: 'new_users'
+        },
         isActive: true,
-        maxUses: 500,
-        currentUses: 0
+        createdBy: adminUser._id
       }
     ];
 
