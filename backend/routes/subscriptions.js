@@ -37,7 +37,7 @@ router.post('/upgrade', [ body('plan').isIn(['basic','pro','premium']).withMessa
     const errors = validationResult(req);
     if(!errors.isEmpty()) return res.status(400).json({ success:false, message:'Validation failed', errors:errors.array() });
     const { plan, offerCode } = req.body;
-    let subscription = await EnhancedSubscription.findOne({ user: req.user._id });
+    const subscription = await EnhancedSubscription.findOne({ user: req.user._id });
     if(!subscription) return res.status(404).json({ success:false, message:'No subscription found' });
     if(subscription.plan === plan) return res.status(400).json({ success:false, message:'You are already on this plan' });
     const planPricing = { basic:1500, pro:3000, premium:5000 };

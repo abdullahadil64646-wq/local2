@@ -6,13 +6,13 @@ const EcommerceStore = require('../models/EcommerceStore');
 const PostingQueue = require('../models/PostingQueue');
 const Offer = require('../models/Offer');
 const UserOffer = require('../models/UserOffer');
-const { auth, isOwner } = require('../middleware/auth');
+const { auth, requireOwner } = require('../middleware/auth');
 
 const router = express.Router();
 
 // Apply owner middleware to all routes
 router.use(auth);
-router.use(isOwner);
+router.use(requireOwner);
 
 // @route   GET /api/admin/dashboard
 // @desc    Get admin dashboard analytics
@@ -272,7 +272,7 @@ router.get('/users', async (req, res) => {
     const { page = 1, limit = 20, search = '', plan = '', status = '' } = req.query;
 
     // Build filter query
-    let filter = {};
+    const filter = {};
     
     if (search) {
       filter.$or = [
@@ -379,7 +379,7 @@ router.put('/users/:userId/subscription', [
       });
     }
 
-    let subscription = await EnhancedSubscription.findOne({ user: userId });
+    const subscription = await EnhancedSubscription.findOne({ user: userId });
     if (!subscription) {
       return res.status(404).json({
         success: false,
@@ -485,7 +485,7 @@ router.get('/offers', async (req, res) => {
   try {
     const { page = 1, limit = 20, status = '' } = req.query;
 
-    let filter = {};
+    const filter = {};
     if (status === 'active') filter.isActive = true;
     if (status === 'inactive') filter.isActive = false;
 

@@ -172,7 +172,7 @@ router.post('/upgrade', [
 
     const { plan, offerCode } = req.body;
     const user = await User.findById(req.user._id);
-    let subscription = await EnhancedSubscription.findOne({ user: req.user._id });
+    const subscription = await EnhancedSubscription.findOne({ user: req.user._id });
 
     if (!subscription) {
       return res.status(404).json({

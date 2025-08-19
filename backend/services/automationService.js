@@ -222,7 +222,7 @@ const generateScheduledPosts = async () => {
       }
       
       // Generate image using AI
-      let mediaUrls = [];
+      const mediaUrls = [];
       try {
         const image = await cloudinaryService.generateAIImage(
           subscription.user.businessType,
