@@ -6,6 +6,7 @@ const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const compression = require('compression');
 const cron = require('node-cron');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
@@ -21,6 +22,10 @@ const paymentRoutes = require('./routes/payments');
 
 // Import services
 const { runDailyAutomation } = require('./services/automationService');
+const connectDB = require('./config/database');
+
+// Connect to database
+connectDB();
 
 // Middleware
 app.use(helmet());
@@ -41,14 +46,6 @@ app.use(limiter);
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Database connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/saas-local-stores', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => console.log('📊 MongoDB Connected Successfully'))
-.catch(err => console.error('❌ MongoDB Connection Error:', err));
-
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -58,12 +55,24 @@ app.use('/api/social-media', socialMediaRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/payments', paymentRoutes);
 
+// Serve static files from React app (for production)
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, 'public')));
+  
+  // Handle React routing, return all requests to React app
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  });
+}
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'OK', 
     message: 'SaaS Local Stores Platform - By Abdullah Adil',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV,
+    database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
   });
 });
 
