@@ -15,7 +15,7 @@ import {
   BellIcon,
   CreditCardIcon,
   QuestionMarkCircleIcon,
-  LogoutIcon,
+  ArrowRightOnRectangleIcon as LogoutIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   SparklesIcon,
