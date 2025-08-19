@@ -11,7 +11,7 @@ class FacebookService {
   // Post text content to Facebook page
   async postToPage(pageId, accessToken, content, mediaUrls = []) {
     try {
-      let postData = {
+      const postData = {
         message: content,
         access_token: accessToken
       };
@@ -463,7 +463,7 @@ class SocialMediaService {
       // Post to Twitter
       if (userSocialMedia.twitter?.connected && userSocialMedia.twitter?.accessToken) {
         // Upload media first if provided
-        let mediaIds = [];
+        const mediaIds = [];
         if (mediaUrls && mediaUrls.length > 0) {
           for (const url of mediaUrls) {
             const mediaId = await this.twitter.uploadMedia(userSocialMedia.twitter.accessToken, url);
