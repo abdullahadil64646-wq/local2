@@ -19,6 +19,7 @@ const ecommerceRoutes = require('./routes/ecommerce');
 const socialMediaRoutes = require('./routes/socialMedia');
 const adminRoutes = require('./routes/admin');
 const paymentRoutes = require('./routes/payments');
+const storeRoutes = require('./routes/store');
 
 // Import services
 const { runDailyAutomation } = require('./services/automationService');
@@ -54,6 +55,7 @@ app.use('/api/ecommerce', ecommerceRoutes);
 app.use('/api/social-media', socialMediaRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/store', storeRoutes);
 
 // Serve static files from React app (for production)
 if (process.env.NODE_ENV === 'production') {
