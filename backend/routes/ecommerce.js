@@ -10,6 +10,7 @@ const { createJazzCashPayment, createEasyPaisaPayment } = require('../services/p
 const deliveryService = require('../services/deliveryService');
 const { sendOrderConfirmation } = require('../services/emailService');
 const { sendOrderConfirmation: sendOrderSMS } = require('../services/smsService');
+const { groceryCategories, popularProducts } = require('../config/groceryConfig');
 const multer = require('multer');
 
 const router = express.Router();
@@ -1035,6 +1036,227 @@ router.get('/analytics', auth, async (req, res) => {
 
   } catch (error) {
     console.error('Get store analytics error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: error.message
+    });
+  }
+});
+
+// @route   POST /api/ecommerce/setup-grocery-categories
+// @desc    Setup default grocery categories for store
+// @access  Private
+router.post('/setup-grocery-categories', auth, async (req, res) => {
+  try {
+    const store = await EcommerceStore.findOne({ owner: req.user._id });
+
+    if (!store) {
+      return res.status(404).json({
+        success: false,
+        message: 'Store not found'
+      });
+    }
+
+    // Add grocery categories if they don't exist
+    const existingCategoryNames = store.categories.map(cat => cat.name.toLowerCase());
+    const categoriesToAdd = groceryCategories.filter(cat => 
+      !existingCategoryNames.includes(cat.name.toLowerCase())
+    );
+
+    categoriesToAdd.forEach(category => {
+      store.categories.push({
+        name: category.name,
+        description: category.description,
+        image: {
+          url: category.icon,
+          publicId: ''
+        },
+        isActive: true,
+        sortOrder: store.categories.length
+      });
+    });
+
+    await store.save();
+
+    res.json({
+      success: true,
+      message: `Added ${categoriesToAdd.length} grocery categories`,
+      categoriesAdded: categoriesToAdd.length,
+      totalCategories: store.categories.length
+    });
+
+  } catch (error) {
+    console.error('Setup grocery categories error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: error.message
+    });
+  }
+});
+
+// @route   POST /api/ecommerce/add-sample-products
+// @desc    Add sample grocery products to store
+// @access  Private
+router.post('/add-sample-products', auth, async (req, res) => {
+  try {
+    const store = await EcommerceStore.findOne({ owner: req.user._id });
+
+    if (!store) {
+      return res.status(404).json({
+        success: false,
+        message: 'Store not found'
+      });
+    }
+
+    // Add sample products if they don't exist
+    const existingProductNames = store.products.map(product => product.name.toLowerCase());
+    const productsToAdd = popularProducts.filter(product => 
+      !existingProductNames.includes(product.name.toLowerCase())
+    );
+
+    productsToAdd.forEach(product => {
+      store.products.push({
+        name: product.name,
+        description: `Fresh ${product.name.toLowerCase()} - high quality groceries delivered to your doorstep`,
+        price: product.basePrice,
+        originalPrice: product.basePrice * 1.2, // 20% original markup
+        currency: 'PKR',
+        images: [{
+          url: `/images/products/${product.name.toLowerCase().replace(/\s+/g, '-')}.jpg`,
+          publicId: ''
+        }],
+        category: product.category,
+        subcategory: product.subcategory,
+        tags: [product.category, product.subcategory, 'fresh', 'grocery'],
+        inventory: {
+          trackQuantity: true,
+          quantity: 100,
+          lowStockThreshold: 10,
+          sku: `${product.category.toUpperCase()}-${Date.now()}`,
+          unit: product.unit
+        },
+        isActive: true,
+        isFeatured: Math.random() > 0.7, // Random 30% chance of being featured
+        seo: {
+          metaTitle: `${product.name} - Fresh Grocery Delivery`,
+          metaDescription: `Order fresh ${product.name.toLowerCase()} online. High quality groceries delivered fast.`,
+          keywords: [product.name.toLowerCase(), product.category, 'grocery', 'fresh', 'delivery']
+        },
+        views: Math.floor(Math.random() * 100),
+        orders: Math.floor(Math.random() * 20),
+        revenue: 0,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+    });
+
+    // Update store analytics
+    store.analytics.totalProducts = store.products.length;
+    store.analytics.activeProducts = store.products.filter(p => p.isActive).length;
+
+    await store.save();
+
+    res.json({
+      success: true,
+      message: `Added ${productsToAdd.length} sample products`,
+      productsAdded: productsToAdd.length,
+      totalProducts: store.products.length
+    });
+
+  } catch (error) {
+    console.error('Add sample products error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: error.message
+    });
+  }
+});
+
+// @route   GET /api/ecommerce/analytics/inventory
+// @desc    Get inventory analytics
+// @access  Private
+router.get('/analytics/inventory', auth, async (req, res) => {
+  try {
+    const store = await EcommerceStore.findOne({ owner: req.user._id });
+
+    if (!store) {
+      return res.status(404).json({
+        success: false,
+        message: 'Store not found'
+      });
+    }
+
+    const products = store.products;
+    
+    // Calculate inventory analytics
+    const analytics = {
+      totalProducts: products.length,
+      activeProducts: products.filter(p => p.isActive).length,
+      inactiveProducts: products.filter(p => !p.isActive).length,
+      lowStockProducts: products.filter(p => 
+        p.inventory?.trackQuantity && 
+        p.inventory.quantity < (p.inventory.lowStockThreshold || 10)
+      ),
+      outOfStockProducts: products.filter(p => 
+        p.inventory?.trackQuantity && p.inventory.quantity === 0
+      ),
+      categoryBreakdown: {},
+      averagePrice: products.length > 0 
+        ? products.reduce((sum, p) => sum + p.price, 0) / products.length 
+        : 0,
+      totalInventoryValue: products.reduce((sum, p) => 
+        sum + (p.price * (p.inventory?.quantity || 0)), 0
+      ),
+      topSellingProducts: products
+        .filter(p => p.orders > 0)
+        .sort((a, b) => b.orders - a.orders)
+        .slice(0, 10)
+        .map(p => ({
+          id: p._id,
+          name: p.name,
+          orders: p.orders,
+          revenue: p.revenue || 0,
+          price: p.price
+        })),
+      recentlyAddedProducts: products
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .slice(0, 5)
+        .map(p => ({
+          id: p._id,
+          name: p.name,
+          price: p.price,
+          createdAt: p.createdAt
+        }))
+    };
+
+    // Calculate category breakdown
+    products.forEach(product => {
+      const category = product.category || 'Uncategorized';
+      if (!analytics.categoryBreakdown[category]) {
+        analytics.categoryBreakdown[category] = {
+          count: 0,
+          activeCount: 0,
+          totalValue: 0
+        };
+      }
+      analytics.categoryBreakdown[category].count++;
+      if (product.isActive) {
+        analytics.categoryBreakdown[category].activeCount++;
+      }
+      analytics.categoryBreakdown[category].totalValue += 
+        product.price * (product.inventory?.quantity || 0);
+    });
+
+    res.json({
+      success: true,
+      analytics
+    });
+
+  } catch (error) {
+    console.error('Inventory analytics error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error',

@@ -32,11 +32,17 @@ const SettingsPage = React.lazy(() => import('./pages/dashboard/SettingsPage'));
 const NotificationsPage = React.lazy(() => import('./pages/dashboard/NotificationsPage'));
 
 // Store pages
+const CustomerStorePage = React.lazy(() => import('./pages/store/CustomerStorePage'));
+const CheckoutPage = React.lazy(() => import('./pages/store/CheckoutPage'));
 const StoreHomePage = React.lazy(() => import('./pages/store/StoreHomePage'));
 const ProductsPage = React.lazy(() => import('./pages/store/ProductsPage'));
 const OrdersPage = React.lazy(() => import('./pages/store/OrdersPage'));
 const CustomersPage = React.lazy(() => import('./pages/store/CustomersPage'));
 const StoreSettingsPage = React.lazy(() => import('./pages/store/StoreSettingsPage'));
+
+// Legal pages
+const PrivacyPolicyPage = React.lazy(() => import('./pages/legal/PrivacyPolicyPage'));
+const TermsConditionsPage = React.lazy(() => import('./pages/legal/TermsConditionsPage'));
 
 // AI Tools pages
 const AIContentPage = React.lazy(() => import('./pages/ai/AIContentPage'));
@@ -417,7 +423,26 @@ const AppContent = () => {
         {/* Public Store Routes (Customer-facing) */}
         <Route path="/store/:storeUrl" element={
           <PublicLayout>
-            <StoreHomePage />
+            <CustomerStorePage />
+          </PublicLayout>
+        } />
+
+        <Route path="/store/:storeUrl/checkout" element={
+          <PublicLayout>
+            <CheckoutPage />
+          </PublicLayout>
+        } />
+
+        {/* Legal Pages */}
+        <Route path="/privacy" element={
+          <PublicLayout>
+            <PrivacyPolicyPage />
+          </PublicLayout>
+        } />
+
+        <Route path="/terms" element={
+          <PublicLayout>
+            <TermsConditionsPage />
           </PublicLayout>
         } />
 
